@@ -59,13 +59,13 @@
 
    ;; comment
    [(:: "//" (:* (:- any-char "\r" "\n"))) (COMMENT lexeme)]
-   ["/*" (BLOCK-COMMENT input-port start-pos)]
+   ["/*" (BLOCK-COMMENT)]
 
    ;; string
-   [#\" (STRING input-port start-pos)]
+   [#\" (STRING)]
 
    ;; char
-   [#\' (CHARACTER input-port start-pos)]))
+   [#\' (CHARACTER)]))
 
 ;; Helper
 (define (map-escape-char c)
@@ -82,8 +82,8 @@
                      (#\v . #\vtab)))
            (raise (format "bad escape char: ~s" c)))))
 
-;; Special Lexer
-(define-special-lex CHARACTER
+;; Special Token
+(define-special-token CHARACTER
   (let ([c (read-char)])
     (cond
       [(eof-object? c) (raise "get eof")]
@@ -93,7 +93,7 @@
   (unless (char=? (read-char) #\')
     (raise "bad character token")))
 
-(define-special-lex STRING
+(define-special-token STRING
   (let loop ()
     (define c (read-char))
     (cond
@@ -118,7 +118,7 @@
        (write-char c)
        (loop)])))
 
-(define-special-lex BLOCK-COMMENT
+(define-special-token BLOCK-COMMENT
   (write-string "/*")
   (let loop ([count 1])
     (define s (peek-string 2 0))
