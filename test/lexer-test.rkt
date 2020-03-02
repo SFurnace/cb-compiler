@@ -1,5 +1,5 @@
 #lang racket/base
-(require "../private/lexer.rkt")
+(require silver-parser "../private/lexer.rkt")
 
 (define str #<<STR
 00
