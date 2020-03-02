@@ -1,5 +1,5 @@
 #lang racket/base
-(require "../private/lexer.rkt")
+(require silver-parser "../private/lexer.rkt")
 
 (define str #<<STR
 00
@@ -31,10 +31,8 @@ STR
 (define in (open-input-string str))
 (define ts (do-lex lex in))
 
-(define (pos->str p)
-  (format "~a:~a:~a" (position-line p) (position-col p) (position-offset p)))
-
 (for ([v (send-generic ts ppeek 100)])
-  (fprintf (current-output-port) "~a(~a-~a): ~s\n"
-           (Token-name v) (pos->str (Token-start-pos v))
-           (pos->str (Token-end-pos v)) (Token-value v)))
+  (fprintf (current-output-port) "~a(~a): ~s\n"
+           (Token-name v)
+           (srcloc->string (Token-srcloc v))
+           (Token-value v)))

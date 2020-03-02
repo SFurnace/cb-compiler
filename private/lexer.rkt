@@ -1,9 +1,9 @@
 #lang racket/base
 (require silver-parser)
-;; for test
-(provide (all-defined-out) (all-from-out silver-parser))
+(provide (all-defined-out))
 
 (define-tokens
+  SEMICOLON COMMA DOT ADD SUB MUL DIV ASSIGN
   VOID CHAR SHORT INT LONG STRUCT UNION
   ENUM STATIC EXTERN CONST SIGNED UNSIGNED
   IF ELSE SWITCH CASE DEFAULT WHILE
@@ -15,6 +15,16 @@
   (lexer
    ;; empty
    [(:+ (union blank (char-set "\r\n"))) ignored]
+
+   ;; termainal
+   [";" (SEMICOLON)]
+   ["," (COMMA)]
+   ["." (DOT)]
+   ["+" (ADD)]
+   ["-" (SUB)]
+   ["*" (MUL)]
+   ["/" (DIV)]
+   ["=" (ASSIGN)]
 
    ;; keywords
    ["void" (VOID)]
