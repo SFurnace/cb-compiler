@@ -15,7 +15,7 @@
 (define (parse-program in #:source-name [name #f])
   (parameterize ([current-source-name name])
     (port-count-lines! in)
-    (let ([fn (get-srcloc in)]
+    (let ([fn (srcloc-getter in)]
           [is (parse-imports in)]
           [ds (parse-defines in)])
       (parse-eof in)
@@ -53,7 +53,7 @@
          lst))
   
   (clean-whitespace in)
-  (let ([fn (get-srcloc in)])
+  (let ([fn (srcloc-getter in)])
     (aif (regexp-try-match regex in)
          (let ([result (if it (convert it) #f)])
            (if handler (handler result (fn in)) result))
@@ -66,7 +66,7 @@
   (let-values ([(l c p) (port-next-location in)])
     (srcloc (current-source-name) l c p #f)))
 
-(define (get-srcloc in0)
+(define (srcloc-getter in0)
   (let-values ([(l c p0) (port-next-location in0)])
     (λ (in1)
       (let-values ([(source) (current-source-name)]
