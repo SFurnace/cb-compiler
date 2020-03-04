@@ -22,8 +22,9 @@
       (Program (fn in) is ds))))
 
 (define (parse-eof in)
-  (unless (expect in #px"^$")
-    (error 'parse-eof "synatx error: ~a" (srcloc->string (new-srcloc in)))))
+  (define (report-err)
+    (error 'parse-eof "synatx error: ~a" (srcloc->string (new-srcloc in))))
+  (expect in #px"^$" #:fail report-err))
 
 (define (parse-imports in)
   (let loop ([lst '()])
@@ -32,9 +33,12 @@
          (reverse lst))))
 
 (define (parse-import in)
-  (let ([loc0 (expect in #px"^import" #:handler (λ (_ loc) loc))])
-    (expect in #px"^([a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*)[[:space:]]*;"
-            #:handler (λ (lst loc1) (Import (merge-srcloc loc0 loc1) (cadr lst))))))
+  (aif (expect in #px"^import" #:ok (λ (_ loc) loc))
+       (expect in #px"^([a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*)[[:space:]]*;"
+               #:merge-srcloc it
+               #:ok (λ (lst loc) (Import loc (cadr lst)))
+               #:fail (λ () (error 'parse-import "invalid import format:~a" (srcloc->string it))))
+       #f))
 
 (define (parse-defines in)
   (error))
@@ -47,17 +51,24 @@
 (define (clean-whitespace in)
   (regexp-match #px"^[[:space:]]*" in))
 
-(define (expect in regex #:handler [handler #f])
-  (define (convert lst)
-    (map (λ (x) (if (bytes? x) (bytes->string/utf-8 x) x))
-         lst))
+(define (expect in regex
+                #:ok [fn-ok (λ (r s) r)]
+                #:fail [fn-fail (λ () #f)]
+                #:merge-srcloc [s0 #f]
+                #:clean-whitespace [clean #t])
+  (define (convert regex-result)
+    (if (pair? regex-result)
+        (map (λ (x) (if (bytes? x) (bytes->string/utf-8 x) x)) regex-result)
+        regex-result))
   
-  (clean-whitespace in)
-  (let ([fn (srcloc-getter in)])
-    (aif (regexp-try-match regex in)
-         (let ([result (if it (convert it) #f)])
-           (if handler (handler result (fn in)) result))
-         #f)))
+  (when clean (clean-whitespace in))
+  (let* ([fn (srcloc-getter in)]
+         [result (convert (regexp-try-match regex in))])
+    (if result
+        (let* ([s1 (fn in)]
+               [sl (if s0 (merge-srcloc s0 s1) s1)])
+          (fn-ok result sl))
+        (fn-fail))))
 
 ;;; srcloc helper
 (define current-source-name (make-parameter #f))

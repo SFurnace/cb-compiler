@@ -1,6 +1,5 @@
 #lang racket
-(require rackunit rackunit/gui
-         "../private/parser/parser.rkt")
+(require rackunit "../private/parser/parser.rkt")
 
 (port-count-lines-enabled #t)
 
@@ -30,7 +29,12 @@ import a0.b1.c2._d3;
    import jfdsla_.dfj.fsal;
     import     fj_fd;
 ")])
-     (check-eqv? (length (parse-imports in)) 3))))
+     (check-eqv? (length (parse-imports in)) 3))
+
+   (let ([in (open-input-string "
+import 123.345;
+")])
+     (check-exn exn:fail? (λ () (parse-import in))))))
 
 (define-test-suite Test-Utils
   "test some utils"
@@ -50,4 +54,10 @@ import a0.b1.c2._d3;
    (read-string (random 0 (sub1 (string-length str))) in)
    (displayln (srcloc->string (new-srcloc in)))))
 
-(test/gui Test-Parsers Test-Utils)
+
+;; Runner
+(module+ test
+  (require rackunit/gui)
+
+  (test/gui #:wait? #t
+            Test-Utils Test-Parsers))
