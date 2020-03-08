@@ -8,7 +8,6 @@
 
   (test-case
    "test except end"
-   (current-source-name "text")
    
    (check-not-false
     (let ([in (open-input-string "\n\r\r  \n\t\n\n")])
@@ -21,7 +20,6 @@
 
   (test-case
    "test parse import"
-   (current-source-name "text")
 
    (let ([in (open-input-string "
 import a0.b1.c2._d3;
@@ -29,7 +27,7 @@ import a0.b1.c2._d3;
    import jfdsla_.dfj.fsal;
     import     fj_fd;
 ")])
-     (check-eqv? (length (parse-imports in)) 3))
+     (check-eqv? (length ((many parse-import) in)) 3))
 
    (let ([in (open-input-string "
 import 123.345;
@@ -50,7 +48,6 @@ import 123.345;
    (define str "a\nb\nc\nd\ne\nf\n")
    (define in (open-input-string str))
    (port-count-lines! in)
-   (current-source-name "text")
    (read-string (random 0 (sub1 (string-length str))) in)
    (displayln (srcloc->string (new-srcloc in)))))
 

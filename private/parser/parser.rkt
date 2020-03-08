@@ -3,21 +3,21 @@
 (provide (all-defined-out))
 
 ;;; data definition
-;; ast ::= srcloc
+
 (struct ast-node [location])
 
 (struct Program ast-node [Imports Defines])
 
 (struct Import ast-node [name])
 
-;;; praser
-;; input-port -> Program
-(define (parse-program in #:source-name [name #f])
+;;; praser ::=  Input-Port -> (U #f Any)
+
+(define (parse-program in #:source-name [name (current-source-name)])
   (parameterize ([current-source-name name])
     (port-count-lines! in)
     (let ([fn (srcloc-getter in)]
-          [is (parse-imports in)]
-          [ds (parse-defines in)])
+          [is ((many parse-import) in)]
+          [ds ((many parse-define) in)])
       (parse-eof in)
       (Program (fn in) is ds))))
 
@@ -25,12 +25,6 @@
   (define (report-err)
     (error 'parse-eof "synatx error: ~a" (srcloc->string (new-srcloc in))))
   (expect in #px"^$" #:fail report-err))
-
-(define (parse-imports in)
-  (let loop ([lst '()])
-    (aif (parse-import in)
-         (loop (cons it lst))
-         (reverse lst))))
 
 (define (parse-import in)
   (aif (expect in #px"^import" #:ok (λ (_ loc) loc))
@@ -40,10 +34,48 @@
                #:fail (λ () (error 'parse-import "invalid import format:~a" (srcloc->string it))))
        #f))
 
-(define (parse-defines in)
-  (error))
+(define (parse-define in)
+  (or (parse-defun in)
+      (parse-defvars in)
+      (parse-defconst in)
+      (parse-defstruct in)
+      (parse-defunion in)
+      (parse-typedef in)))
+
+(define (parse-defun in)
+  #f)
+
+(define (parse-defvars in)
+  (let ([storage (expect in "^static" #:ok (λ _ #t))]
+        [type (parse-type in)]
+        [initial-list ((many parse-initial-list) in)])
+    #f))
+
+(define (parse-defconst in)
+  #f)
+
+(define (parse-defstruct in)
+  #f)
+
+(define (parse-defunion in)
+  #f)
+
+(define (parse-typedef in)
+  #f)
+
+(define (parse-type in)
+  #f)
+
+(define (parse-initial-list in)
+  #f)
 
 ;;; parser helper
+(define ((many parser) in)
+  (let loop ([lst '()])
+    (aif (parser in)
+         (loop (cons it lst))
+         (reverse lst))))
+
 (define (merge-srcloc s0 s1)
   (srcloc (srcloc-source s0) (srcloc-line s0) (srcloc-column s0) (srcloc-position s0)
           (+ (- (srcloc-position s1) (srcloc-position s0)) (srcloc-span s1))))
@@ -71,7 +103,7 @@
         (fn-fail))))
 
 ;;; srcloc helper
-(define current-source-name (make-parameter #f))
+(define current-source-name (make-parameter "unknown"))
 
 (define (new-srcloc in)
   (let-values ([(l c p) (port-next-location in)])
