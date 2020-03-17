@@ -1,10 +1,17 @@
 #lang racket/base
 (provide (all-defined-out))
 
-(define old (current-inspector))
-(current-inspector (make-inspector))
+;;; Abstract
 
 (struct Ast [location])
+
+;;; File
+
+(struct Program [source imports definition] #:transparent)
+
+(struct Library [source imports declaration] #:transparent)
+
+;;; Top
 
 (struct Import Ast [ids])
 
@@ -14,7 +21,7 @@
 
 (struct Typedef Ast [name type])
 
-(struct VarDef Ast [type vars static])
+(struct VarDef Ast [name type init static] #:transparent)
 
 (struct FuncDef Ast [name r-type params body static])
 
@@ -81,5 +88,3 @@
 (struct Str Ast [str])
 
 (struct Id Ast [str])
-
-(current-inspector old)

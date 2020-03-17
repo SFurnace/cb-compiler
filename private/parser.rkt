@@ -1,12 +1,18 @@
 #lang racket/base
-(require racket/match silver-parser "./ast.rkt" "./lexer.rkt")
+(require racket/list racket/match silver-parser "./ast.rkt" "./lexer.rkt")
 (provide (all-defined-out))
 
+;;; File
+
+(@ compilation-unit
+   (@: import-stmts top-defs <EOF>
+       => (Program (parsable-name) $0 (flatten $1))))
+
+(@ library
+   (@: import-stmts top-decls <EOF>
+       => (Library (parsable-name) $0 $1)))
+
 ;;; Top
-
-(@ compilation-unit (@: import-stmts top-defs <EOF>))
-
-(@ library (@: import-stmts top-decls <EOF>))
 
 (@ import-stmts (@* import-stmt))
 
@@ -17,13 +23,15 @@
 ;;; Import
 
 (@ import-stmt
-   (@: <IMPORT> ! (@sepBy <DOT> <IDENTIFIER>) <SEMICOLON>
+   (@: #:msg "not a valid import statement"
+       <IMPORT> ! (@sepBy <DOT> <IDENTIFIER>) <SEMICOLON>
        => (Import (Token-srcloc $0) (map Token-value $1))))
 
 ;;; Declaration
 
 (@ funcdecl
-   (@: <EXTERN> type <IDENTIFIER> <LEFT-S> ! params <RIGHT-S> <SEMICOLON>
+   (@: #:msg "not a valid function declaration"
+       <EXTERN> type <IDENTIFIER> <LEFT-S> ! params <RIGHT-S> <SEMICOLON>
        => (FuncDecl (Token-srcloc $0) (Token-value $2) $4 $1)))
 
 (@ vardecl
@@ -33,16 +41,21 @@
 ;; Definition
 
 (@ funcdef
-   (@: (@? <STATIC>) type <IDENTIFIER> <LEFT-S> ! params <RIGHT-S> block
+   (@: #:msg "not a valid function definition"
+       (@? <STATIC>) type <IDENTIFIER> <LEFT-S> ! params <RIGHT-S> block
        => (if (null? $0)
               (FuncDef (Ast-location $1) (Token-value $2) $1 $4 $6 #f)
               (FuncDef (Token-srcloc (car $0)) (Token-value $2) $1 $4 $6 #t))))
 
 (@ vardef
    (@: (@? <STATIC>) type vars <SEMICOLON>
-       => (if (null? $0)
-              (VarDef (Ast-location $1) $1 $2 #f)
-              (VarDef (Token-srcloc (car $0)) $1 $2 #t))))
+       => (let ([static (if (null? $0) #f #t)])
+            (for/list ([v (in-list $2)])
+              (match v
+                [`(,loc ,name ,expr)
+                 (VarDef loc name $1 expr static)]
+                [`(,loc ,name)
+                 (VarDef loc name $1 #f static)])))))
 
 (@ typedef
    (@: <TYPEDEF> ! type <IDENTIFIER> <SEMICOLON>
@@ -63,8 +76,8 @@
 ;;; Definition Helper
 
 (@ vars
-   (@sepBy <COMMA> (@u (@: <IDENTIFIER> <ASSIGN> expr => (cons (Token-value $0) $2))
-                       (@: <IDENTIFIER> => (Token-value $0)))))
+   (@sepBy <COMMA> (@u (@: <IDENTIFIER> <ASSIGN> expr => (list (Token-srcloc $0) (Token-value $0) $2))
+                       (@: <IDENTIFIER> => (list (Token-srcloc $0) (Token-value $0))))))
 
 (@ members (@: <LEFT-B> (@sepBy <SEMICOLON> (@: type <IDENTIFIER>)) <RIGHT-B>))
 

@@ -34,5 +34,6 @@ default:
 (parse compilation-unit "
 typedef int var;
 
+static int i=1,b,a,c;
 var i = 12;
 ")
