@@ -3,13 +3,19 @@
 (provide (all-defined-out))
 
 (define-tokens
-  SEMICOLON COMMA DOT ADD SUB MUL DIV ASSIGN
-  VOID CHAR SHORT INT LONG STRUCT UNION
+  SEMICOLON COLON COMMA DOT ADD SUB MUL DIV MOD
+  ASSIGN ADD-ASSIGN SUB-ASSIGN MUL-ASSIGN DIV-ASSIGN
+  MOD-ASSIGN BAND-ASSIGN BOR-ASSIGN BXOR-ASSIGN
+  BLSH-ASSIGN BRSH-ASSIGN ADD2 SUB2 NOT BIT-NOT
+  LEFT-S RIGHT-S LEFT-M RIGHT-M LEFT-B RIGHT-B
+  ELLIPSIS VOID CHAR SHORT INT LONG STRUCT UNION
   ENUM STATIC EXTERN CONST SIGNED UNSIGNED
   IF ELSE SWITCH CASE DEFAULT WHILE
   DO FOR RETURN BREAK CONTINUE GOTO
   TYPEDEF IMPORT SIZEOF IDENTIFIER
-  INTEGER COMMENT)
+  INTEGER COMMENT QUESTION OR AND
+  BIGGER SMALLER LEAST MOST EQ NEQ
+  BIT-AND BIT-OR BIT-XOR RSH LSH ARROW)
 
 (define lex
   (lexer
@@ -18,13 +24,51 @@
 
    ;; termainal
    [";" (SEMICOLON)]
+   ["(" (LEFT-S)]
+   [")" (RIGHT-S)]
+   ["[" (LEFT-M)]
+   ["]" (RIGHT-M)]
+   ["{" (LEFT-B)]
+   ["}" (RIGHT-B)]
+   [":" (COLON)]
    ["," (COMMA)]
    ["." (DOT)]
-   ["+" (ADD)]
-   ["-" (SUB)]
-   ["*" (MUL)]
-   ["/" (DIV)]
-   ["=" (ASSIGN)]
+   ["=" (ASSIGN '=)]
+   ["+=" (ADD-ASSIGN '+=)]
+   ["-=" (SUB-ASSIGN '-=)]
+   ["*=" (MUL-ASSIGN '*=)]
+   ["/=" (DIV-ASSIGN '/=)]
+   ["%=" (MOD-ASSIGN '%=)]
+   ["&=" (BAND-ASSIGN '&=)]
+   ["|=" (BOR-ASSIGN '\|=)]
+   ["^=" (BXOR-ASSIGN '^=)]
+   [">>=" (BLSH-ASSIGN '>>=)]
+   ["<<=" (BRSH-ASSIGN '<<=)]
+   [">" (BIGGER '>)]
+   ["<" (SMALLER '<)]
+   [">=" (LEAST '>=)]
+   ["<=" (MOST '<=)]
+   ["==" (EQ '==)]
+   ["!=" (NEQ '!=)]
+   ["||" (OR 'or)]
+   ["&&" (AND 'and)]
+   ["++" (ADD2 '++)]
+   ["--" (SUB2 '--)]
+   ["->" (ARROW '->)]
+   ["!" (NOT '!)]
+   ["~" (BIT-NOT '~)]
+   ["+" (ADD '+)]
+   ["-" (SUB '-)]
+   ["*" (MUL '*)]
+   ["/" (DIV '/)]
+   ["%" (MOD '%)]
+   [">>" (RSH '>>)]
+   ["<<" (LSH '<<)]
+   ["&" (BIT-AND '&)]
+   ["|" (BIT-OR '\|)]
+   ["^" (BIT-XOR '^)]
+   ["?" (QUESTION)]
+   ["..." (ELLIPSIS)]
 
    ;; keywords
    ["void" (VOID)]
