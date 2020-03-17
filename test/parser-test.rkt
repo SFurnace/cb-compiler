@@ -1,12 +1,16 @@
 #lang racket
-(require rackunit silver-parser "../private/lexer.rkt" "../private/parser.rkt")
+(require rackunit rackunit/gui racket/pretty
+         silver-parser
+         "../private/lexer.rkt" "../private/parser.rkt")
 
-(parsable-name "")
+(parsable-name "test")
 
 (define (parse p s)
-  (p (do-lex lex (open-input-string s))))
+  (pretty-print (p (do-lex lex (open-input-string s)))))
 
-(parse (@* primary) "
+(define-test-suite test-primary
+  (test-case "base"
+    (parse (@* primary) "
 12U
 0o127
 'x'
@@ -15,9 +19,11 @@ xyx_xyx
 (1 + 1)
 (-a[12]++--+12*\"adf\")
 a+
-")
+")))
 
-(parse (@* statement) "
+(define-test-suite test-statement
+  (test-case "base"
+    (parse (@* statement) "
 x:
 if (a++)  {12;} else {13;};
 
@@ -29,11 +35,13 @@ default:
 }
 
 { struct T x = 12; !x;}
-")
+")))
 
-(parse compilation-unit "
+(define-test-suite test-program
+  (test-case "base"
+    (parse compilation-unit "
 typedef int var;
 
 static int i=1,b,a,c;
 var i = 12;
-")
+")))
